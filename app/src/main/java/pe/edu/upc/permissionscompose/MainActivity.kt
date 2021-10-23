@@ -19,6 +19,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import pe.edu.upc.permissionscompose.ui.theme.PermissionsComposeTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +43,10 @@ fun FeatureThatRequiresCameraPermission() {
         mutableStateOf(false)
     }
 
-    var cameraPermissionState =
+    val cameraPermissionState =
         rememberPermissionState(permission = android.Manifest.permission.CAMERA)
 
+    val context = LocalContext.current
 
     PermissionRequired(
         permissionState = cameraPermissionState,
@@ -52,31 +54,57 @@ fun FeatureThatRequiresCameraPermission() {
             if (doNotShowRationale) {
                 Text("Feature not available")
             } else {
-                Column {
-                    Text("Camera is important for this app. Please grant ther permission.")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Button(onClick = {
-                            cameraPermissionState.launchPermissionRequest()
-                        }) {
-                            Text("OK!")
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = {
-                            doNotShowRationale = true
-                        }) {
-                            Text("Nope")
-                        }
-                    }
-                }
+                PermissionNotGrantedUI(
+                    onYesClick = {
+                        cameraPermissionState.launchPermissionRequest()
+                    }, onCancelClick = {
+                        doNotShowRationale = true
+                    })
             }
         },
         permissionNotAvailableContent = {
-            Column {
-                Text("Camera permission denied.")
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }) {
-        Text("Camera Permission Granted")
+            PermissionNotAvailableContent(
+                onOpenSettingsClick = { context.openSettings() })
+        },
+        content = {
+            Text("Camera Permission Granted")
+        }
+    )
+
+
+}
+
+@Composable
+fun PermissionNotAvailableContent(onOpenSettingsClick: () -> Unit) {
+
+    Column {
+        Text("Camera permission denied.")
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { onOpenSettingsClick() }) {
+            Text("Open settings")
+        }
     }
+}
+
+
+@Composable
+fun PermissionNotGrantedUI(onYesClick: () -> Unit, onCancelClick: () -> Unit) {
+    Column {
+        Text("Camera is important for this app. Please grant ther permission.")
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Button(onClick = {
+                onYesClick()
+            }) {
+                Text("Yes")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                onCancelClick()
+            }) {
+                Text("Cancel")
+            }
+        }
+    }
+
 }
